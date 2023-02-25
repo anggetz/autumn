@@ -1,6 +1,7 @@
 package main
 
 import (
+	"autumn/controllers"
 	"autumn/models"
 	"autumn/pkg/autumncore/generic"
 	"flag"
@@ -26,8 +27,7 @@ func main() {
 
 	groupApi := route.Group("v1")
 	{
-		generic.NewController[models.User]().Resources("user", groupApi)
-		generic.NewController[models.Block]().Resources("blok", groupApi)
+		generic.Resources[models.User]("user", groupApi, controllers.NewUserController())
 	}
 
 	route.Run(":" + os.Getenv("APP_PORT"))

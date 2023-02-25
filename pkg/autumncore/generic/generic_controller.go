@@ -6,16 +6,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Controller[T Model[T]] struct {
+type Controller[T Model[T]] interface {
+	Get(*gin.Context)
+	Insert(*gin.Context)
+	Update(*gin.Context)
+	Delete(*gin.Context)
+}
+
+type ControllerImpl[T Model[T]] struct {
 	Val T
 }
 
-func NewController[T Model[T]]() *Controller[T] {
-	return &Controller[T]{}
+func NewControllerImpl[T Model[T]]() Controller[T] {
+	return &ControllerImpl[T]{}
 }
 
-func (c *Controller[T]) Get(g *gin.Context) {
-	data, err := c.Val.Get()
+func (c *ControllerImpl[T]) Get(g *gin.Context) {
+	genericModel := NewModelImpl[T]()
+
+	data, err := genericModel.Get()
 	if err != nil {
 		g.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -24,7 +33,8 @@ func (c *Controller[T]) Get(g *gin.Context) {
 	g.JSON(http.StatusAccepted, data)
 }
 
-func (c *Controller[T]) Insert(g *gin.Context) {
+func (c *ControllerImpl[T]) Insert(g *gin.Context) {
+	genericModel := NewModelImpl[T]()
 
 	var requestPayload T
 
@@ -34,7 +44,7 @@ func (c *Controller[T]) Insert(g *gin.Context) {
 		return
 	}
 
-	err = c.Val.Insert(requestPayload)
+	err = genericModel.Insert(requestPayload)
 	if err != nil {
 		g.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -43,7 +53,8 @@ func (c *Controller[T]) Insert(g *gin.Context) {
 	g.JSON(http.StatusAccepted, "Success")
 }
 
-func (c *Controller[T]) Update(g *gin.Context) {
+func (c *ControllerImpl[T]) Update(g *gin.Context) {
+	genericModel := NewModelImpl[T]()
 
 	var requestPayload T
 
@@ -53,7 +64,7 @@ func (c *Controller[T]) Update(g *gin.Context) {
 		return
 	}
 
-	err = c.Val.Update(requestPayload)
+	err = genericModel.Update(requestPayload)
 	if err != nil {
 		g.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -62,11 +73,12 @@ func (c *Controller[T]) Update(g *gin.Context) {
 	g.JSON(http.StatusAccepted, "Success")
 }
 
-func (c *Controller[T]) Delete(g *gin.Context) {
+func (c *ControllerImpl[T]) Delete(g *gin.Context) {
+	genericModel := NewModelImpl[T]()
 
 	id := g.Query("id")
 
-	err := c.Val.Delete(id)
+	err := genericModel.Delete(id)
 	if err != nil {
 		g.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -75,7 +87,7 @@ func (c *Controller[T]) Delete(g *gin.Context) {
 	g.JSON(http.StatusAccepted, "Success")
 }
 
-func (c *Controller[T]) Resources(groupName string, router *gin.RouterGroup) {
+func Resources[T Model[T]](groupName string, router *gin.RouterGroup, c Controller[T]) {
 	genericGroup := router.Group(groupName)
 	{
 		genericGroup.GET("get", c.Get)

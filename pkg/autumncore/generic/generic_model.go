@@ -15,6 +15,10 @@ type Model[T any] interface {
 type ModelImpl[T Model[T]] struct {
 }
 
+func NewModelImpl[T Model[T]]() Model[T] {
+	return &ModelImpl[T]{}
+}
+
 func (m *ModelImpl[T]) Get() ([]T, error) {
 	db, err := connection.NewDatabase().GetConnection(os.Getenv("DATABASE_DSN"))
 	if err != nil {
